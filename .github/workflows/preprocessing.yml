@@ -1,0 +1,42 @@
+name: Preprocessing Pipeline
+
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - 'dreaddit_raw/**'
+      - 'preprocessing/automate_squishydal.py'
+  workflow_dispatch:
+
+jobs:
+  preprocess:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install pandas scikit-learn
+
+      - name: Run preprocessing
+        run: |
+          cd preprocessing
+          python automate_squishydal.py \
+            --train ../dreaddit_raw/dreaddit-train.csv \
+            --test  ../dreaddit_raw/dreaddit-test.csv \
+            --output dreaddit_preprocessing
+
+      - name: Commit preprocessed data
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add preprocessing/dreaddit_preprocessing/
+          git diff --staged --quiet || git commit -m "ci: update preprocessed dataset [skip ci]"
+          git push

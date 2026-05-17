@@ -1,0 +1,10 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY prometheus_exporter.py .
+COPY dreaddit_preprocessing/ ./dreaddit_preprocessing/
+
+RUN pip install prometheus-client requests pandas numpy
+
+CMD ["python", "prometheus_exporter.py"]

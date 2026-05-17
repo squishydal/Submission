@@ -1,0 +1,41 @@
+services:
+  model:
+    image: squishydal/dreaddit-stress-model:latest
+    ports:
+      - "5001:8080"
+    environment:
+      - MLSERVER_HTTP_PORT=8080
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/v2/health/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  exporter:
+    build:
+      context: .
+      dockerfile: Dockerfile.exporter
+    ports:
+      - "8000:8000"
+    depends_on:
+      model:
+        condition: service_healthy
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      - exporter
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=squishydal
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
